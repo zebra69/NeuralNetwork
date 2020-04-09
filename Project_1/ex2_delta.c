@@ -1,6 +1,10 @@
 /*************************************************************/
-/* C-program for delta-learning rule                         */
-/* Learning rule of one neuron                               */
+/* C-program for learning of single layer neural network     */
+/* based on the delta learning rule                          */
+/*                                                           */
+/*  1) Number of Inputs : N                                  */
+/*  2) Number of Output : R                                  */
+/* The last input for all neurons is always -1               */
 /*                                                           */
 /* This program is produced by Qiangfu Zhao.                 */
 /* You are free to use it for educational purpose            */
@@ -10,37 +14,37 @@
 #include <math.h>
 #include <float.h>
 
-#define I             4
-#define n_sample      8
+#define N             3
+#define R             3
+#define n_sample      3
 #define eta           0.5
 #define lambda        1.0
-#define desired_error 0.01
+#define desired_error 0.1
 #define sigmoid(x)    (2.0/(1.0+exp(-lambda*x))-1.0)
 #define frand()       (rand()%10000/10001.0)
 #define randomize()   srand((unsigned int)time(NULL))
 
-double x[n_sample][I]={
-  { 1, 1, 1,-1},
-  { 1, 1,-1,-1},
-  { 1,-1, 1,-1},
-  { 1,-1,-1,-1},
-  {-1, 1, 1,-1},
-  {-1, 1,-1,-1},
-  {-1,-1, 1,-1},
-  {-1,-1,-1,-1},
+double x[n_sample][N]={
+  {10,2,-1},
+  {2,-5,-1},
+  {-5,5,-1},
 };
-
-double w[I];
-double d[n_sample]={1,1,1,-1,1,-1,-1,-1};
-double o;
+double d[n_sample][R]={
+  {1,-1,-1},
+  {-1,1,-1},
+  {-1,-1,1},
+};
+double w[R][N];
+double o[R];
 
 void Initialization(void);
 void FindOutput(int);
 void PrintResult(void);
 
 main(){
-  int    i,p,q=0;
-  double delta,Error=DBL_MAX;
+  int    i,j,p,q=0;
+  double Error=DBL_MAX;
+  double delta;
 
   Initialization();
   while(Error>desired_error){
@@ -48,13 +52,17 @@ main(){
     Error=0;
     for(p=0; p<n_sample; p++){
       FindOutput(p);
-      Error+=0.5*pow(d[p]-o,2.0);
-      for(i=0;i<I;i++){
-	delta=(d[p]-o)*(1-o*o)/2;
-	w[i]+=eta*delta*x[p][i];
+      for(i=0;i<R;i++){
+        Error+=0.5*pow(d[p][i]-o[i],2.0);
       }
-      printf("Error in the %d-th learning cycle=%f\n",q,Error);
+      for(i=0;i<R;i++){
+        delta=(d[p][i]-o[i])*(1-o[i]*o[i])/2;
+        for(j=0;j<N;j++){
+          w[i][j]+=eta*delta*x[p][j];
+        }
+      }
     } 
+    printf("Error in the %d-th learning cycle=%f\n",q,Error);
   }
   PrintResult();
 }
@@ -63,31 +71,42 @@ main(){
 /* Initialization of the connection weights                  */
 /*************************************************************/
 void Initialization(void){
-  int i;
+  int i,j;
 
   randomize();
-  for(i=0; i<I; i++) w[i]=frand();
+  for(i=0;i<R;i++)
+    for(j=0;j<N;j++)
+      w[i][j]=frand()-0.5;
 }
 
 /*************************************************************/
 /* Find the actual outputs of the network                    */
 /*************************************************************/
 void FindOutput(int p){
-  int    i;
-  double temp=0;
+  int    i,j;
+  double temp;
 
-  for(i=0;i<I;i++) temp += w[i]*x[p][i];
-  o = sigmoid(temp);
+  for(i=0;i<R;i++){
+    temp=0;
+    for(j=0;j<N;j++){
+      temp+=w[i][j]*x[p][j];
+    }
+    o[i]=sigmoid(temp);
+  }
 }
 
 /*************************************************************/
 /* Print out the final result                                */
 /*************************************************************/
 void PrintResult(void){
-  int i;
+  int i,j;
 
   printf("\n\n");
-  printf("The connection weights of the neurons:\n");
-  for(i=0;i<I;i++) printf("%5f ",w[i]);
+  printf("The connection weights are:\n");
+  for(i=0;i<R;i++){
+    for(j=0;j<N;j++)
+      printf("%5f ",w[i][j]);
+    printf("\n");
+  }
   printf("\n\n");
 }
